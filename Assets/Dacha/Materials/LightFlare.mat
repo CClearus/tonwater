@@ -29,13 +29,13 @@ Material:
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
-    - _Intensity: 2
+    - _Intensity: 2.5
     - _LookPower: 8
     - _MinBrightness: 0.15
     - _PushToCamera: 2
     - _RayStrength: 0.6
-    - _Size: 6
-    - _Spin: 0.05
+    - _Size: 12
+    - _Spin: 0
     - _UseTexture: 0
     m_Colors:
     - _Color: {r: 1, g: 0.97, b: 0.92, a: 1}

@@ -15,6 +15,7 @@ Shader "Dacha/LightFlare"
         _LookPower ("Look-At Sharpness", Range(1, 64)) = 8
         _MinBrightness ("Brightness When Not Looking", Range(0, 1)) = 0.15
         _PushToCamera ("Push Toward Camera (m)", Float) = 2
+        [HideInInspector] _Visibility ("Visibility", Range(0, 1)) = 1
     }
 
     SubShader
@@ -27,6 +28,7 @@ Shader "Dacha/LightFlare"
             Tags { "LightMode" = "UniversalForward" }
             Blend One One
             ZWrite Off
+            ZTest Always // never clipped by the ceiling; FlareOcclusion hides it behind walls
             Cull Off
 
             HLSLPROGRAM
@@ -47,6 +49,7 @@ Shader "Dacha/LightFlare"
                 half _LookPower;
                 half _MinBrightness;
                 float _PushToCamera;
+                half _Visibility;
             CBUFFER_END
 
             TEXTURE2D(_MainTex);
@@ -109,7 +112,7 @@ Shader "Dacha/LightFlare"
                                + pow(saturate(1.0 - abs(p.x) * 30.0), 2.0) * saturate(1.0 - abs(p.y))) * _RayStrength;
                     col = (core + halo + rays) * saturate(1.0 - d);
                 }
-                return half4(col * _Color.rgb * _Intensity * i.look, 1);
+                return half4(col * _Color.rgb * _Intensity * i.look * _Visibility, 1);
             }
             ENDHLSL
         }

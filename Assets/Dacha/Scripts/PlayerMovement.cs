@@ -32,6 +32,9 @@ public class PlayerMovement : NetworkBehaviour
 
     public bool IsGrounded { get; private set; }
 
+    // The camera of the player on this computer (null until spawned).
+    public static Camera LocalCamera { get; private set; }
+
     CharacterController controller;
     Camera playerCamera;
     AudioListener playerListener;
@@ -62,6 +65,7 @@ public class PlayerMovement : NetworkBehaviour
 
         if (!IsOwner) return;
 
+        LocalCamera = playerCamera;
         if (Camera.main != null && Camera.main != playerCamera)
         {
             sceneCamera = Camera.main.gameObject;
@@ -97,6 +101,7 @@ public class PlayerMovement : NetworkBehaviour
     public override void OnNetworkDespawn()
     {
         if (!IsOwner) return;
+        if (LocalCamera == playerCamera) LocalCamera = null;
         if (sceneCamera != null) sceneCamera.SetActive(true);
         SetCursorLocked(false);
     }

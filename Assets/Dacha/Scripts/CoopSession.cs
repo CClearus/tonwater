@@ -31,7 +31,11 @@ public class CoopSession : MonoBehaviour
 
         try
         {
-            await UnityServices.InitializeAsync();
+            // A fresh sign-in profile per launch, so two copies of the game on one PC
+            // (or a crashed session) never share the same player identity.
+            var options = new InitializationOptions();
+            options.SetProfile("p" + Guid.NewGuid().ToString("N").Substring(0, 12));
+            await UnityServices.InitializeAsync(options);
             if (!AuthenticationService.Instance.IsSignedIn)
                 await AuthenticationService.Instance.SignInAnonymouslyAsync();
             SetStatus("Ready. Host a game or enter a code to join.");

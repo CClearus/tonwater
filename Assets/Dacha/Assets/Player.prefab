@@ -234,11 +234,17 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FollowSpot
   color: {r: 1, g: 0.96, b: 0.9, a: 1}
-  intensity: 2500
+  intensity: 900
   range: 60
-  outerAngle: 10
-  innerAngle: 5
+  outerAngle: 5
+  innerAngle: 2
+  cookie: {fileID: 2800000, guid: 011e41c3f23257f408ebafbfba049e02, type: 3}
   aimOffset: {x: 0, y: -0.5, z: 0}
+  beamMaterial: {fileID: 2100000, guid: 50e4cf2a6ff8c8b449b3c260f6451c60, type: 2}
+  beamOvershoot: 1.5
+  flicker: 1
+  shimmer: 0.06
+  dipsPerSecond: 0.08
 --- !u!1 &3766098104368389749
 GameObject:
   m_ObjectHideFlags: 0
@@ -283,8 +289,8 @@ Light:
   serializedVersion: 13
   m_Type: 2
   m_Color: {r: 1, g: 1, b: 1, a: 1}
-  m_Intensity: 3
-  m_Range: 3
+  m_Intensity: 0.5
+  m_Range: 5
   m_SpotAngle: 30
   m_InnerSpotAngle: 21.80208
   m_CookieSize2D: {x: 0.5, y: 0.5}
@@ -482,7 +488,7 @@ MonoBehaviour:
     m_Bits: 1
   m_VolumeTrigger: {fileID: 0}
   m_VolumeFrameworkUpdateModeOption: 2
-  m_RenderPostProcessing: 0
+  m_RenderPostProcessing: 1
   m_Antialiasing: 0
   m_AntialiasingQuality: 2
   m_StopNaN: 0

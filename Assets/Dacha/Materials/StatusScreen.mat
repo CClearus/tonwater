@@ -1,0 +1,44 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!21 &2100000
+Material:
+  serializedVersion: 8
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: StatusScreen
+  m_Shader: {fileID: 4800000, guid: 2021681841876874da621d2e388420ea, type: 3}
+  m_Parent: {fileID: 0}
+  m_ModifiedSerializedProperties: 0
+  m_ValidKeywords: []
+  m_InvalidKeywords: []
+  m_LightmapFlags: 4
+  m_EnableInstancingVariants: 0
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: -1
+  stringTagMap: {}
+  disabledShaderPasses: []
+  m_LockedProperties: 
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs: []
+    m_Ints: []
+    m_Floats:
+    - _CellCount: 3
+    - _FrameWidth: 0.07
+    - _IconSize: 0.55
+    - _IconWidth: 0.07
+    - _OffPixelGlow: 0.012
+    - _PixelsHigh: 40
+    - _SubpixelStrength: 1
+    m_Colors:
+    - _Done0: {r: 0, g: 0, b: 0, a: 0}
+    - _Done1: {r: 0, g: 0, b: 0, a: 0}
+    - _DoneColor: {r: 0.15, g: 0.7, b: 2.4, a: 1}
+    - _FillColor: {r: 0.006, g: 0.006, b: 0.008, a: 1}
+    - _NotDoneColor: {r: 2.2, g: 0.02, b: 0.02, a: 1}
+    - _Power0: {r: 1, g: 1, b: 1, a: 1}
+    - _Power1: {r: 1, g: 1, b: 1, a: 1}
+  m_BuildTextureStacks: []
+  m_AllowLocking: 1
