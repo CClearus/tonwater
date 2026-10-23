@@ -1,4 +1,5 @@
 
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -18,7 +19,6 @@ public class BeamReflector : MonoBehaviour
 
     [Header("Visible Beam")]
     public float beamWidth = 0.035f;
-    public Color beamColor = new Color(1f, 0.9f, 0.65f, 1f);
 
     [Header("Reflected Light")]
     public bool castShadows = true;
@@ -30,6 +30,8 @@ public class BeamReflector : MonoBehaviour
     private Collider reflectorCollider;
 
     private bool isHeld;
+    private bool originalIsTrigger;
+
     private LineRenderer beamLine;
     private Light reflectedLight;
     private LightSource reflectedLightSource;
@@ -43,6 +45,9 @@ public class BeamReflector : MonoBehaviour
         rb = GetComponent<Rigidbody>();
         reflectorCollider = GetComponent<Collider>();
 
+        if (reflectorCollider != null)
+            originalIsTrigger = reflectorCollider.isTrigger;
+
         CreateBeamLine();
         CreateReflectedLight();
     }
@@ -50,9 +55,7 @@ public class BeamReflector : MonoBehaviour
     private void Update()
     {
         if (playerCamera == null)
-        {
             FindPlayerCamera();
-        }
 
         if (playerCamera != null && Input.GetKeyDown(pickupKey))
         {
@@ -74,7 +77,6 @@ public class BeamReflector : MonoBehaviour
             if (Input.GetKey(KeyCode.R))
                 rotateInput = 1f;
 
-            // Rotate around the vertical axis only.
             transform.Rotate(
                 Vector3.up,
                 rotateInput * rotateSpeed * Time.deltaTime,
@@ -93,7 +95,8 @@ public class BeamReflector : MonoBehaviour
 
         foreach (Camera cam in cameras)
         {
-            if (cam.isActiveAndEnabled &&
+            if (cam != null &&
+                cam.isActiveAndEnabled &&
                 cam.CompareTag("MainCamera"))
             {
                 playerCamera = cam;
@@ -111,9 +114,6 @@ public class BeamReflector : MonoBehaviour
 
     private void TryPickupReflector()
     {
-        if (playerCamera == null)
-            return;
-
         Ray ray = new Ray(
             playerCamera.transform.position,
             playerCamera.transform.forward
@@ -130,9 +130,7 @@ public class BeamReflector : MonoBehaviour
                 hit.collider.GetComponentInParent<BeamReflector>();
 
             if (reflector == this)
-            {
                 PickupReflector();
-            }
         }
     }
 
@@ -143,15 +141,16 @@ public class BeamReflector : MonoBehaviour
         if (rb != null)
         {
             rb.isKinematic = true;
-            rb.linearVelocity = Vector3.zero;
+            rb.velocity = Vector3.zero;
             rb.angularVelocity = Vector3.zero;
         }
 
-        if (playerTransform == null && playerCamera != null)
-            playerTransform = playerCamera.transform.root;
-
+        // Keep the collider available for flashlight raycasts.
         if (reflectorCollider != null)
-            reflectorCollider.enabled = false;
+        {
+            reflectorCollider.enabled = true;
+            reflectorCollider.isTrigger = true;
+        }
     }
 
     private void DropReflector()
@@ -159,7 +158,10 @@ public class BeamReflector : MonoBehaviour
         isHeld = false;
 
         if (reflectorCollider != null)
+        {
+            reflectorCollider.isTrigger = originalIsTrigger;
             reflectorCollider.enabled = true;
+        }
 
         if (rb != null)
             rb.isKinematic = false;
@@ -174,7 +176,6 @@ public class BeamReflector : MonoBehaviour
             playerCamera.transform.position +
             playerCamera.transform.forward * holdDistance;
 
-        // Keep the held reflector upright.
         Vector3 flatForward = Vector3.ProjectOnPlane(
             playerCamera.transform.forward,
             Vector3.up
@@ -200,21 +201,26 @@ public class BeamReflector : MonoBehaviour
         beamLine.positionCount = 2;
         beamLine.startWidth = beamWidth;
         beamLine.endWidth = beamWidth;
-        beamLine.startColor = beamColor;
-        beamLine.endColor = beamColor;
+        beamLine.numCapVertices = 4;
         beamLine.enabled = false;
 
-        beamMaterial = new Material(Shader.Find("Sprites/Default"));
-        beamLine.material = beamMaterial;
+        Shader shader = Shader.Find("Sprites/Default");
+
+        if (shader != null)
+        {
+            beamMaterial = new Material(shader);
+            beamLine.material = beamMaterial;
+        }
     }
 
     private void CreateReflectedLight()
     {
         GameObject lightObject = new GameObject("Reflected Light");
-        reflectedLight = lightObject.AddComponent<Light>();
 
+        reflectedLight = lightObject.AddComponent<Light>();
         reflectedLight.type = LightType.Spot;
         reflectedLight.enabled = false;
+
         reflectedLightSource = lightObject.AddComponent<LightSource>();
     }
 
@@ -227,7 +233,7 @@ public class BeamReflector : MonoBehaviour
 
         foreach (LightSource source in LightSource.All)
         {
-            if (source == null)
+            if (source == null || source == reflectedLightSource)
                 continue;
 
             Light sourceLight = source.SourceLight;
@@ -241,31 +247,57 @@ public class BeamReflector : MonoBehaviour
                 continue;
             }
 
-            // Cast along the actual flashlight direction.
-            Vector3 incoming = sourceLight.transform.forward.normalized;
+            Vector3 incoming =
+                sourceLight.transform.forward.normalized;
 
-            if (!Physics.Raycast(
+            RaycastHit mirrorHit = default(RaycastHit);
+            bool hitReflector = false;
+
+            RaycastHit[] mirrorHits = Physics.RaycastAll(
                 sourceLight.transform.position,
                 incoming,
-                out RaycastHit mirrorHit,
                 sourceLight.range,
                 beamMask,
-                QueryTriggerInteraction.Ignore))
+                QueryTriggerInteraction.Collide
+            );
+
+            Array.Sort(
+                mirrorHits,
+                (a, b) => a.distance.CompareTo(b.distance)
+            );
+
+            foreach (RaycastHit hit in mirrorHits)
             {
-                continue;
+                if (hit.collider == null)
+                    continue;
+
+                // Ignore the player carrying the reflector.
+                if (playerTransform != null &&
+                    hit.collider.transform.IsChildOf(playerTransform))
+                {
+                    continue;
+                }
+
+                if (hit.collider == reflectorCollider)
+                {
+                    mirrorHit = hit;
+                    hitReflector = true;
+                    break;
+                }
+
+                if (!hit.collider.isTrigger)
+                    break;
             }
 
-            // The first surface hit must be this reflector.
-            if (mirrorHit.collider != reflectorCollider)
+            if (!hitReflector)
                 continue;
 
-            // Calculate the physical reflection direction.
             Vector3 reflectedDirection = Vector3.Reflect(
                 incoming,
                 mirrorHit.normal
             );
 
-            // Constrain the reflected beam to the horizontal plane.
+            // Keep the reflected beam horizontal.
             reflectedDirection.y = 0f;
 
             if (reflectedDirection.sqrMagnitude < 0.001f)
@@ -274,19 +306,25 @@ public class BeamReflector : MonoBehaviour
             reflectedDirection.Normalize();
 
             Vector3 beamOrigin =
-                mirrorHit.point + reflectedDirection * surfaceOffset;
+                mirrorHit.point +
+                reflectedDirection * surfaceOffset;
 
-            // Position and aim the real reflected light.
+            float remainingRange = Mathf.Max(
+                0.1f,
+                sourceLight.range - mirrorHit.distance
+            );
+
             reflectedLight.transform.position = beamOrigin;
             reflectedLight.transform.rotation = Quaternion.LookRotation(
                 reflectedDirection,
                 Vector3.up
             );
 
-            // Match the original flashlight settings.
-            reflectedLight.range = sourceLight.range;
-            reflectedLight.intensity = sourceLight.intensity;
+            // Copy the incident flashlight's actual light properties.
             reflectedLight.color = sourceLight.color;
+            reflectedLight.intensity = sourceLight.intensity;
+            reflectedLight.range = remainingRange;
+
             reflectedLight.spotAngle = Mathf.Clamp(
                 sourceLight.spotAngle * reflectedLightAngleMultiplier,
                 1f,
@@ -299,31 +337,55 @@ public class BeamReflector : MonoBehaviour
 
             reflectedLight.enabled = true;
 
-            // Draw the visible reflected beam.
             Vector3 beamEnd =
-                beamOrigin + reflectedDirection * reflectedLight.range;
+                beamOrigin + reflectedDirection * remainingRange;
 
-            if (Physics.Raycast(
+            RaycastHit[] targetHits = Physics.RaycastAll(
                 beamOrigin,
                 reflectedDirection,
-                out RaycastHit targetHit,
-                reflectedLight.range,
+                remainingRange,
                 beamMask,
-                QueryTriggerInteraction.Ignore))
+                QueryTriggerInteraction.Collide
+            );
+
+            Array.Sort(
+                targetHits,
+                (a, b) => a.distance.CompareTo(b.distance)
+            );
+
+            foreach (RaycastHit targetHit in targetHits)
             {
+                if (targetHit.collider == null)
+                    continue;
+
+                if (targetHit.collider == reflectorCollider ||
+                    targetHit.collider.transform.IsChildOf(transform))
+                    continue;
+
+                if (playerTransform != null &&
+                    targetHit.collider.transform.IsChildOf(playerTransform))
+                    continue;
+
                 beamEnd = targetHit.point;
+
+                if (!targetHit.collider.isTrigger)
+                    break;
             }
+
+            // Match the visible line to the incident flashlight color.
+            beamLine.startColor = sourceLight.color;
+            beamLine.endColor = sourceLight.color;
+            beamLine.startWidth = beamWidth;
+            beamLine.endWidth = beamWidth;
 
             beamLine.SetPosition(0, beamOrigin);
             beamLine.SetPosition(1, beamEnd);
-            beamLine.startColor = sourceLight.color;
-            beamLine.endColor = sourceLight.color;
             beamLine.enabled = true;
 
             UpdateReflectedSensors(
                 beamOrigin,
                 reflectedDirection,
-                reflectedLight.range
+                remainingRange
             );
 
             foundReflection = true;
@@ -354,7 +416,10 @@ public class BeamReflector : MonoBehaviour
             QueryTriggerInteraction.Collide
         );
 
-        System.Array.Sort(hits, (a, b) => a.distance.CompareTo(b.distance));
+        Array.Sort(
+            hits,
+            (a, b) => a.distance.CompareTo(b.distance)
+        );
 
         foreach (RaycastHit hit in hits)
         {
@@ -363,9 +428,11 @@ public class BeamReflector : MonoBehaviour
 
             if (hit.collider == reflectorCollider ||
                 hit.collider.transform.IsChildOf(transform))
-            {
                 continue;
-            }
+
+            if (playerTransform != null &&
+                hit.collider.transform.IsChildOf(playerTransform))
+                continue;
 
             LightSensor sensor =
                 hit.collider.GetComponentInParent<LightSensor>();
@@ -373,7 +440,6 @@ public class BeamReflector : MonoBehaviour
             if (sensor != null)
                 newlyLitSensors.Add(sensor);
 
-            // Stop at the first solid object.
             if (!hit.collider.isTrigger)
                 break;
         }
