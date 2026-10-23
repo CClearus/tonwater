@@ -8,5 +8,8 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Dacha/Scene/Test.unity
     guid: d7c7d118b6c2168468c760fd85ce718e
+  - enabled: 1
+    path: Assets/WaterTon/test nigga.unity
+    guid: dcba18e7edeb4054298d9e0451b20a35
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
