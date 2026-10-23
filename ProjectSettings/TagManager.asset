@@ -5,11 +5,12 @@ TagManager:
   serializedVersion: 3
   tags:
   - Ground
+  - Lighter
   layers:
   - Default
   - TransparentFX
   - Ignore Raycast
-  - 
+  - Reflector
   - Water
   - UI
   - 
