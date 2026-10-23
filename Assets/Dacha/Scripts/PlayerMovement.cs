@@ -68,13 +68,30 @@ public class PlayerMovement : NetworkBehaviour
             sceneCamera.SetActive(false);
         }
 
-        // Spread players out so they don't spawn inside each other.
-        Vector2 offset = Random.insideUnitCircle * spawnSpread;
-        controller.enabled = false;
-        transform.position += new Vector3(offset.x, 0f, offset.y);
-        controller.enabled = true;
+        MoveToSpawnPoint();
 
         SetCursorLocked(true);
+    }
+
+    // Uses the scene's PlayerSpawnPoints (one per player, in order). Without any,
+    // players spawn at the prefab position, spread out so they don't overlap.
+    void MoveToSpawnPoint()
+    {
+        controller.enabled = false;
+        var point = PlayerSpawnPoint.Get((int)OwnerClientId);
+        if (point != null)
+        {
+            // Feet on the point: lift by half the controller's world height.
+            float halfHeight = (controller.height * 0.5f - controller.center.y) * transform.lossyScale.y;
+            transform.SetPositionAndRotation(point.transform.position + Vector3.up * halfHeight,
+                                             Quaternion.Euler(0f, point.transform.eulerAngles.y, 0f));
+        }
+        else
+        {
+            Vector2 offset = Random.insideUnitCircle * spawnSpread;
+            transform.position += new Vector3(offset.x, 0f, offset.y);
+        }
+        controller.enabled = true;
     }
 
     public override void OnNetworkDespawn()
