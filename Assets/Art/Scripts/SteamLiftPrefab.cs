@@ -174,7 +174,7 @@ public class SteamLiftPrefab : MonoBehaviour
         Rigidbody body = other.attachedRigidbody;
 
         if (body != null && !body.isKinematic &&
-            body.velocity.y < maxLiftSpeed)
+            body.linearVelocity.y < maxLiftSpeed)
         {
             body.AddForce(
                 Vector3.up * rigidbodyLiftForce,
